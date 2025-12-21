@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import "./App.css";
+import Shimmer from "./Shimmer";
+
 
 function App() {
   const [products, setProducts] = useState([]);
@@ -46,6 +48,10 @@ function App() {
     // alert me with product title
     // alert(`${product.title} added to cart! 🛒`);
   };
+  //testing shimmer layout
+  // if (products.length === 0) {
+  //   return <Shimmer />
+  // }
 
   return (
 
@@ -64,7 +70,9 @@ function App() {
       </header>
 
       {/* product grid */}
-      <div className="product-grid" style={{ display: "flex", flexWrap: "wrap", gap: "20px", justifyContent: "center" }}>
+      {/*if product is fetching at that moment we wanted to show shimmer */}
+      {/*conditional rendering of cards */}
+      {(products.length === 0 ? (<Shimmer />) : (<div className="product-grid" style={{ display: "flex", flexWrap: "wrap", gap: "20px", justifyContent: "center" }}>
         {displayList.map((product) => (
           <div key={product.id} className="card" style={{ border: "1px solid #ddd", padding: "15px", width: "250px", borderRadius: "10px", boxShadow: "0 4px 8px rgba(0,0,0,0.1)" }}>
 
@@ -95,7 +103,7 @@ function App() {
 
           </div>
         ))}
-      </div>
+      </div>))}
     </div>
   );
 }
