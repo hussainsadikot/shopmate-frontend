@@ -1,63 +1,67 @@
-// File: src/store/cartSlice.js
 import { createSlice } from '@reduxjs/toolkit';
 
-const initialState = {
-    items: [],      // કાર્ટની આઈટમ્સ
-    totalQuantity: 0, // કુલ કેટલી વસ્તુ છે
-    totalAmount: 0,   // કુલ કેટલા રૂપિયા થયા
+// ૧. લોકલ સ્ટોરેજમાંથી ડેટા લાવવાનું ફંક્શન
+const loadCartFromStorage = () => {
+    const storedCart = localStorage.getItem("shopMateCart");
+    if (storedCart) {
+        return JSON.parse(storedCart); // જો ડેટા હોય તો JSON માંથી ઓબ્જેક્ટ બનાવો
+    }
+    return {
+        items: [],
+        totalQuantity: 0,
+        totalAmount: 0,
+    }; // જો ન હોય તો ખાલી રાખો
 };
+
+// ૨. initialState માં ફંક્શન કોલ કરો
+const initialState = loadCartFromStorage();
 
 const cartSlice = createSlice({
     name: 'cart',
     initialState,
     reducers: {
-        // Action: કાર્ટમાં આઈટમ ઉમેરવી
         addItemToCart(state, action) {
             const newItem = action.payload;
-            // ચેક કરો કે આઈટમ પહેલાથી છે કે નહીં
             const existingItem = state.items.find((item) => item.id === newItem.id);
 
             state.totalQuantity++;
             state.totalAmount = state.totalAmount + newItem.price;
+
             if (!existingItem) {
-                // નવી આઈટમ હોય તો ઉમેરો
                 state.items.push({
                     id: newItem.id,
-                    title: newItem.title, // FakeStore માં 'title' હોય છે
+                    title: newItem.title,
                     price: newItem.price,
                     image: newItem.image,
                     quantity: 1,
                     totalPrice: newItem.price,
                 });
-
-
             } else {
-                // જૂની હોય તો કોન્ટીટી વધારો
                 existingItem.quantity++;
                 existingItem.totalPrice += newItem.price;
-
             }
 
+            // ૩. જ્યારે પણ કંઈક બદલાય, ત્યારે સેવ કરો
+            // (Redux માં અહીં સાઈડ-ઈફેક્ટ કરવી સારી આદત નથી, પણ અત્યારે શીખવા માટે આપણે App.js માં સેવ કરીશું)
         },
-        // Action: કાર્ટમાંથી આઈટમ કાઢવી (તમે આ ફ્યુચરમાં વાપરી શકો)
+
         removeItemFromCart(state, action) {
             const id = action.payload;
             const existingItem = state.items.find((item) => item.id === id);
 
             if (existingItem) {
-                state.totalQuantity--; // કુલ કોન્ટીટી ઘટાડો
-                state.totalAmount = state.totalAmount - existingItem.price;
+                state.totalQuantity--;
+                state.totalAmount -= existingItem.price;
+
                 if (existingItem.quantity === 1) {
-                    // જો 1 જ હોય તો લિસ્ટમાંથી કાઢી નાખો
-                    state.items = state.items.filter((item) => item.id !== id);
+                    state.items = state.items.filter(item => item.id !== id);
                 } else {
-                    // નહીંતર ખાલી કોન્ટીટી ઘટાડો
                     existingItem.quantity--;
                     existingItem.totalPrice -= existingItem.price;
                 }
             }
         },
-        // Action: કાર્ટ ખાલી કરવું
+
         clearCart(state) {
             state.items = [];
             state.totalQuantity = 0;
