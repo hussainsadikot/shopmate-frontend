@@ -10,6 +10,7 @@ const loadCartFromStorage = () => {
         items: [],
         totalQuantity: 0,
         totalAmount: 0,
+        selectedCategory: "All",
     }; // જો ન હોય તો ખાલી રાખો
 };
 
@@ -20,6 +21,7 @@ const cartSlice = createSlice({
     name: 'cart',
     initialState,
     reducers: {
+
         addItemToCart(state, action) {
             const newItem = action.payload;
             const existingItem = state.items.find((item) => item.id === newItem.id);
@@ -66,9 +68,12 @@ const cartSlice = createSlice({
             state.items = [];
             state.totalQuantity = 0;
             state.totalAmount = 0;
-        }
+        },
+        setCategory: (state, action) => {
+            state.selectedCategory = action.payload;
+        },
     },
 });
 
-export const { addItemToCart, removeItemFromCart, clearCart } = cartSlice.actions;
+export const { addItemToCart, removeItemFromCart, clearCart, setCategory } = cartSlice.actions;
 export default cartSlice.reducer;

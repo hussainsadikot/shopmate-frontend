@@ -3,6 +3,8 @@ import React, { useState } from "react";
 import { useDispatch } from "react-redux";
 // Redux માંથી actions મંગાવી લો
 import { addItemToCart, removeItemFromCart, clearCart } from "./store/cartSlice";
+import { placeOrder } from "./store/orderSlice";
+import { useNavigate } from "react-router-dom";
 
 const CartPage = ({ cartItems }) => {
     const dispatch = useDispatch(); // App.js માંથી dispatch ન મોકલો તો અહીં બનાવી લેવું પડે
@@ -16,6 +18,9 @@ const CartPage = ({ cartItems }) => {
         mobile: "",
         address: ""
     });
+
+    //nevigetor
+    const navigate = useNavigate();
 
     const itemTotal = cartItems.reduce((total, item) => total + item.totalPrice, 0);
     const gstAmount = itemTotal * 0.18;
@@ -36,99 +41,130 @@ const CartPage = ({ cartItems }) => {
             return;
         }
 
-        alert(`Order Placed Successfully for ₹${grandTotal.toFixed(2)}! \nThank you, ${formData.name}! 🎉`);
+        // alert(`Order Placed Successfully for ₹${grandTotal.toFixed(2)}! \nThank you, ${formData.name}! 🎉`);
+        // ૧. ઓર્ડર ઓબ્જેક્ટ તૈયાર કરો
+        const newOrder = {
+            id: Date.now(), // યુનિક ID
+            date: new Date().toLocaleString(),
+            customer: formData,
+            items: cartItems,
+            total: grandTotal,
+            status: "Pending"
+        };
+
+        // ૨. Redux માં ઓર્ડર સેવ કરો
+        dispatch(placeOrder(newOrder));
+
+        alert("Order Placed Successfully! ✅");
 
         // કાર્ટ ખાલી કરો
         dispatch(clearCart());
+        navigate("/orders");   // ૩. રિપોર્ટ પેજ પર લઈ જાઓ (આપણે હજુ બનાવવાનું બાકી છે)
     };
 
     if (cartItems.length === 0) {
         return (
-            <div style={{ textAlign: 'center', marginTop: '50px' }}>
-                <h2>Your Cart is Empty! 😞</h2>
-                <p>Order placed or no items added.</p>
-                <button onClick={() => window.location.reload()} style={{ padding: '10px', cursor: 'pointer' }}>Go to Home</button>
+            <div className="flex flex-col items-center justify-center h-[60vh] text-center">
+                <h2 className="text-3xl font-bold text-gray-400 mb-4">Your Cart is Empty! 😞</h2>
+                <p className="text-gray-500 mb-6">Order placed or no items added.</p>
+                <button onClick={() => window.location.reload()} className="bg-[#ff9900] text-white px-6 py-2 rounded-lg font-bold hover:bg-orange-600 transition-colors shadow-md">Go to Home</button>
             </div>
         );
     }
 
     return (
-        <div style={{ padding: "20px", maxWidth: "1000px", margin: "0 auto", display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
+        <div className="p-5 max-w-7xl mx-auto flex flex-col lg:flex-row gap-8 font-sans">
 
             {/* LEFT SIDE: items OR Checkout Form */}
-            <div style={{ flex: 2, minWidth: '300px' }}>
+            <div className="flex-[2]">
 
                 {showCheckout ? (
-                    <div style={{ border: '1px solid #ddd', padding: '20px', borderRadius: '10px' }}>
-                        <h3>📦 Shipping Details</h3>
-                        <form onSubmit={handlePlaceOrder} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                    <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
+                        <h3 className="text-xl font-bold mb-4 flex items-center gap-2">📦 Shipping Details</h3>
+                        <form onSubmit={handlePlaceOrder} className="flex flex-col gap-4">
                             <input
                                 type="text" name="name" placeholder="Full Name" value={formData.name} onChange={handleInputChange}
-                                style={{ padding: '10px', border: '1px solid #ccc', borderRadius: '5px' }}
+                                className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-[#ff9900] focus:ring-1 focus:ring-[#ff9900]"
                             />
                             <input
                                 type="text" name="mobile" placeholder="Mobile Number" value={formData.mobile} onChange={handleInputChange}
-                                style={{ padding: '10px', border: '1px solid #ccc', borderRadius: '5px' }}
+                                className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-[#ff9900] focus:ring-1 focus:ring-[#ff9900]"
                             />
                             <textarea
                                 name="address" placeholder="Delivery Address" value={formData.address} onChange={handleInputChange}
-                                style={{ padding: '10px', border: '1px solid #ccc', borderRadius: '5px', height: '80px' }}
+                                className="p-3 border border-gray-300 rounded-lg h-24 focus:outline-none focus:border-[#ff9900] focus:ring-1 focus:ring-[#ff9900]"
                             />
 
-                            <button type="submit" style={{ padding: '15px', background: '#28a745', color: 'white', border: 'none', fontWeight: 'bold', borderRadius: '5px', cursor: 'pointer' }}>
+                            <button type="submit" className="mt-2 w-full bg-green-600 text-white font-bold py-3 rounded-lg hover:bg-green-700 transition shadow-md">
                                 CONFIRM ORDER - ₹{grandTotal.toFixed(2)}
                             </button>
 
-                            <button type="button" onClick={() => setShowCheckout(false)} style={{ padding: '10px', background: 'transparent', color: 'red', border: 'none', cursor: 'pointer' }}>
+                            <button
+                                type="button"
+                                onClick={() => setShowCheckout(false)}
+                                className="text-red-500 font-semibold hover:underline text-sm text-center mt-2"
+                            >
                                 Cancel & Go Back
                             </button>
                         </form>
                     </div>
                 ) : (
-                    <div style={{ border: '1px solid #eee', borderRadius: '10px', padding: '10px' }}>
-                        <h2>Your Cart Items ({cartItems.length})</h2>
-                        {cartItems.map((item) => (
-                            <div key={item.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #f0f0f0', padding: '15px 0' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                                    <img src={item.image} alt={item.title} style={{ width: "50px", height: "50px", objectFit: "contain" }} />
-                                    <div>
-                                        <h4 style={{ margin: 0, fontSize: '14px' }}>{item.title.slice(0, 20)}...</h4>
-                                        <small style={{ color: 'gray' }}>${item.price}</small>
+                    // CART ITEMS LIST DESIGN
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                        <div className="p-4 bg-gray-50 border-b font-bold text-gray-700">
+                            Your Cart Items ({cartItems.length})
+                        </div>
+                        <div className="divide-y divide-gray-100">
+                            {cartItems.map((item) => (
+                                <div key={item.id} className="flex items-center justify-between p-4 hover:bg-gray-50 transition">
+                                    <div className="flex items-center gap-4">
+                                        <img src={item.image} alt={item.title} className="w-16 h-16 object-contain bg-white rounded-md border p-1" />
+                                        <div>
+                                            <h4 className="font-bold text-gray-800 line-clamp-1 w-40 sm:w-auto">{item.title}</h4>
+                                            <small className="text-gray-500 font-bold">${item.price}</small>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-center gap-3 bg-gray-100 px-3 py-1 rounded-full">
+                                        <button onClick={() => dispatch(removeItemFromCart(item.id))} className="text-gray-600 hover:text-black font-bold px-2">-</button>
+                                        <span className="font-semibold text-gray-800">{item.quantity}</span>
+                                        <button onClick={() => dispatch(addItemToCart(item))} className="text-gray-600 hover:text-black font-bold px-2">+</button>
                                     </div>
                                 </div>
-                                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                                    <button onClick={() => dispatch(removeItemFromCart(item.id))} style={{ background: "#eee", border: "none", padding: "5px 10px", cursor: 'pointer' }}>-</button>
-                                    <span>{item.quantity}</span>
-                                    <button onClick={() => dispatch(addItemToCart(item))} style={{ background: "#eee", border: "none", padding: "5px 10px", cursor: 'pointer' }}>+</button>
-                                </div>
-                            </div>
-                        ))}
+                            ))}
+                        </div>
                     </div>
                 )}
             </div>
 
-            {/* RIGHT SIDE: Bill Details */}
-            <div style={{ flex: 1, minWidth: '280px' }}>
-                <div style={{ position: 'sticky', top: '20px', border: '1px solid #eee', padding: '20px', borderRadius: '10px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
-                    <h3>Bill Details</h3>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
+            {/* RIGHT SIDE: Bill Details (Sticky) */}
+            <div className="flex-1 min-w-[300px]">
+                <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-200 sticky top-24">
+                    <h3 className="text-xl font-bold border-b pb-3 mb-4 text-gray-800">Bill Details</h3>
+
+                    <div className="flex justify-between mb-2 text-gray-600">
                         <span>Item Total</span> <span>${itemTotal.toFixed(2)}</span>
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
+                    <div className="flex justify-between mb-2 text-gray-600">
                         <span>GST (18%)</span> <span>${gstAmount.toFixed(2)}</span>
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', color: deliveryFee === 0 ? 'green' : 'black' }}>
-                        <span>Delivery Fee</span> <span>{deliveryFee === 0 ? "FREE" : `$${deliveryFee}`}</span>
+                    <div className={`flex justify-between mb-4 ${deliveryFee === 0 ? 'text-green-600 font-bold' : 'text-gray-600'}`}>
+                        <span>Delivery Fee</span>
+                        <span>{deliveryFee === 0 ? "FREE" : `$${deliveryFee}`}</span>
                     </div>
-                    <hr />
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', fontSize: '18px', fontWeight: 'bold' }}>
-                        <span>To Pay</span> <span>${grandTotal.toFixed(2)}</span>
+
+                    <hr className="border-dashed my-4" />
+
+                    <div className="flex justify-between text-xl font-bold text-gray-900 mb-6">
+                        <span>To Pay</span>
+                        <span>${grandTotal.toFixed(2)}</span>
                     </div>
 
                     {!showCheckout && (
                         <button
                             onClick={() => setShowCheckout(true)}
-                            style={{ width: '100%', padding: '15px', background: '#fc8019', color: 'white', border: 'none', fontSize: '16px', fontWeight: 'bold', borderRadius: '5px', cursor: 'pointer' }}>
+                            className="w-full bg-[#ff9900] text-white py-3 rounded-lg font-bold hover:bg-orange-600 transition shadow-md active:scale-95"
+                        >
                             PROCEED TO PAY
                         </button>
                     )}
